@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="compute" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F58536"/><stop offset="1" stop-color="#D45B07"/>
+    </linearGradient>
+    <linearGradient id="network" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8C4FFF"/><stop offset="1" stop-color="#5A2D9E"/>
+    </linearGradient>
+    <linearGradient id="storage" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3B8F3B"/><stop offset="1" stop-color="#1D6B1D"/>
+    </linearGradient>
+    <linearGradient id="mgmt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E7157B"/><stop offset="1" stop-color="#A50D58"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#232F3E"/>
+    </marker>
+    <marker id="arrowDash" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#879196"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#232F3E">DevOps Lab — AWS Architecture (ECR + ECS Fargate)</text>
+
+  <!-- User -->
+  <g>
+    <circle cx="70" cy="150" r="20" fill="#232F3E"/>
+    <circle cx="70" cy="142" r="7" fill="#fff"/>
+    <path d="M55,162 a15,12 0 0 1 30,0 z" fill="#fff"/>
+    <text x="70" y="192" text-anchor="middle" font-size="13" fill="#232F3E" font-weight="600">End User</text>
+  </g>
+
+  <!-- AWS Cloud boundary -->
+  <rect x="150" y="70" width="820" height="620" rx="10" fill="none" stroke="#232F3E" stroke-width="2"/>
+  <text x="168" y="92" font-size="13" font-weight="700" fill="#232F3E">AWS Cloud — Region (us-east-1)</text>
+
+  <!-- ECR (storage/green) top right -->
+  <g>
+    <rect x="800" y="110" width="60" height="60" rx="8" fill="url(#storage)"/>
+    <rect x="814" y="126" width="32" height="28" rx="3" fill="#fff"/>
+    <rect x="818" y="130" width="24" height="5" fill="#3B8F3B"/>
+    <rect x="818" y="139" width="24" height="5" fill="#3B8F3B"/>
+    <rect x="818" y="148" width="24" height="3" fill="#3B8F3B"/>
+    <text x="830" y="186" text-anchor="middle" font-size="12" font-weight="600" fill="#232F3E">Amazon ECR</text>
+    <text x="830" y="200" text-anchor="middle" font-size="10" fill="#555">image registry</text>
+  </g>
+
+  <!-- CloudWatch (mgmt/pink) bottom right -->
+  <g>
+    <rect x="800" y="560" width="60" height="60" rx="8" fill="url(#mgmt)"/>
+    <path d="M812 600 l10 -16 l9 12 l8 -20 l9 24" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="830" y="636" text-anchor="middle" font-size="12" font-weight="600" fill="#232F3E">CloudWatch</text>
+    <text x="830" y="650" text-anchor="middle" font-size="10" fill="#555">logs + metrics</text>
+  </g>
+
+  <!-- VPC boundary -->
+  <rect x="180" y="110" width="580" height="540" rx="8" fill="none" stroke="#8C4FFF" stroke-width="2" stroke-dasharray="2 0"/>
+  <g>
+    <rect x="190" y="120" width="26" height="26" rx="4" fill="url(#network)"/>
+    <path d="M196 133 h14 M203 126 v14" stroke="#fff" stroke-width="2"/>
+    <text x="224" y="138" font-size="13" font-weight="700" fill="#5A2D9E">VPC  10.0.0.0/16</text>
+  </g>
+
+  <!-- Internet Gateway -->
+  <g>
+    <rect x="200" y="170" width="52" height="52" rx="8" fill="url(#network)"/>
+    <path d="M226 180 a16 16 0 1 0 0.1 0 M210 196 h32 M226 180 q-10 16 0 32 q10 -16 0 -32" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="226" y="238" text-anchor="middle" font-size="11" font-weight="600" fill="#232F3E">Internet GW</text>
+  </g>
+
+  <!-- Public subnets box -->
+  <rect x="200" y="260" width="540" height="130" rx="6" fill="#F2ECFF" stroke="#8C4FFF" stroke-width="1.5"/>
+  <text x="214" y="280" font-size="12" font-weight="700" fill="#5A2D9E">Public Subnets (2 Availability Zones)</text>
+
+  <!-- ALB -->
+  <g>
+    <rect x="300" y="295" width="58" height="58" rx="8" fill="url(#network)"/>
+    <circle cx="329" cy="316" r="7" fill="#fff"/>
+    <path d="M329 323 v12 M329 335 h-18 v-8 M329 335 h18 v-8" stroke="#fff" stroke-width="2" fill="none"/>
+    <text x="329" y="370" text-anchor="middle" font-size="11" font-weight="600" fill="#232F3E">Application</text>
+    <text x="329" y="383" text-anchor="middle" font-size="11" font-weight="600" fill="#232F3E">Load Balancer</text>
+  </g>
+
+  <!-- NAT Gateway -->
+  <g>
+    <rect x="560" y="295" width="58" height="58" rx="8" fill="url(#network)"/>
+    <text x="589" y="330" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">NAT</text>
+    <text x="589" y="370" text-anchor="middle" font-size="11" font-weight="600" fill="#232F3E">NAT Gateway</text>
+  </g>
+
+  <!-- Private subnets box -->
+  <rect x="200" y="410" width="540" height="220" rx="6" fill="#FFF3E8" stroke="#F58536" stroke-width="1.5"/>
+  <text x="214" y="430" font-size="12" font-weight="700" fill="#D45B07">Private Subnets (2 Availability Zones)</text>
+
+  <!-- ECS cluster box -->
+  <rect x="230" y="445" width="480" height="165" rx="6" fill="none" stroke="#F58536" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="244" y="465" font-size="12" font-weight="700" fill="#D45B07">ECS Cluster (Fargate)</text>
+
+  <!-- Task 1 -->
+  <g>
+    <rect x="300" y="480" width="110" height="110" rx="8" fill="url(#compute)"/>
+    <rect x="325" y="505" width="60" height="44" rx="4" fill="#fff"/>
+    <path d="M355 505 v44 M325 527 h60" stroke="#F58536" stroke-width="2"/>
+    <text x="355" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Task 1</text>
+    <text x="355" y="586" text-anchor="middle" font-size="9" fill="#fff">container :5000</text>
+  </g>
+
+  <!-- Task 2 -->
+  <g>
+    <rect x="530" y="480" width="110" height="110" rx="8" fill="url(#compute)"/>
+    <rect x="555" y="505" width="60" height="44" rx="4" fill="#fff"/>
+    <path d="M585 505 v44 M555 527 h60" stroke="#F58536" stroke-width="2"/>
+    <text x="585" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Task 2</text>
+    <text x="585" y="586" text-anchor="middle" font-size="9" fill="#fff">container :5000</text>
+  </g>
+
+  <!-- Flows -->
+  <!-- User -> IGW -->
+  <path d="M92 150 C 150 150, 160 196, 198 196" fill="none" stroke="#232F3E" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="120" y="140" font-size="10" fill="#232F3E">HTTP :80</text>
+  <!-- IGW -> ALB -->
+  <path d="M226 224 C 226 260, 300 270, 320 293" fill="none" stroke="#232F3E" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <!-- ALB -> Task1 -->
+  <path d="M329 355 C 329 420, 350 460, 355 478" fill="none" stroke="#232F3E" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <!-- ALB -> Task2 -->
+  <path d="M358 330 C 470 360, 560 440, 585 478" fill="none" stroke="#232F3E" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="430" y="420" font-size="10" fill="#232F3E">health check /health + traffic</text>
+
+  <!-- ECR -> tasks (dashed pull) -->
+  <path d="M800 150 C 690 220, 470 420, 410 500" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrowDash)"/>
+  <path d="M800 150 C 720 260, 640 440, 615 500" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrowDash)"/>
+  <text x="640" y="250" font-size="10" fill="#879196">pull image</text>
+
+  <!-- tasks -> NAT -> IGW (outbound) -->
+  <path d="M640 520 C 720 500, 589 400, 589 355" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrowDash)"/>
+  <path d="M589 293 C 560 250, 300 240, 252 210" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrowDash)"/>
+  <text x="600" y="430" font-size="10" fill="#879196">outbound</text>
+
+  <!-- tasks -> CloudWatch (dashed logs) -->
+  <path d="M640 545 C 740 545, 770 580, 798 588" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrowDash)"/>
+  <text x="700" y="560" font-size="10" fill="#879196">logs</text>
+
+  <!-- Legend -->
+  <g font-size="11">
+    <rect x="180" y="662" width="14" height="14" rx="3" fill="url(#compute)"/><text x="200" y="673" fill="#232F3E">Compute (ECS/Fargate)</text>
+    <rect x="360" y="662" width="14" height="14" rx="3" fill="url(#network)"/><text x="380" y="673" fill="#232F3E">Networking (VPC/ALB/NAT/IGW)</text>
+    <rect x="600" y="662" width="14" height="14" rx="3" fill="url(#storage)"/><text x="620" y="673" fill="#232F3E">Registry (ECR)</text>
+    <rect x="720" y="662" width="14" height="14" rx="3" fill="url(#mgmt)"/><text x="740" y="673" fill="#232F3E">Observability (CloudWatch)</text>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+# .dockerignore - files that should NOT be copied into the image.
+# Keeping these out makes the image smaller and builds faster,
+# and avoids leaking local-only files into the container.
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+tests/
+README.md
+docker-compose.yml
+.github/
+venv/
+.venv/

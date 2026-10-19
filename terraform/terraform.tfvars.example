@@ -1,0 +1,10 @@
+# terraform.tfvars.example
+#
+# Copy this to `terraform.tfvars` and adjust. terraform.tfvars is read
+# automatically and is gitignored so you don't commit environment-specific
+# values.
+
+aws_region    = "us-east-1"
+app_name      = "devops-lab"
+desired_count = 2
+image_tag     = "latest"

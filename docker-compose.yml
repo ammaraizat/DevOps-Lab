@@ -1,0 +1,23 @@
+# docker-compose.yml - run the app locally like a mini production setup.
+#
+# Instead of typing a long `docker run ...` command, we describe what
+# we want here and start it with:  docker compose up --build
+
+services:
+  web:
+    # Build the image using the Dockerfile in the current directory.
+    build: .
+    # Map port 5000 on your machine -> port 5000 in the container,
+    # so you can open http://localhost:5000 in your browser.
+    ports:
+      - "5000:5000"
+    # Restart the container automatically if it crashes.
+    restart: unless-stopped
+    # A healthcheck tells Docker how to know the app is actually ready,
+    # by polling our /health endpoint. This mirrors how real
+    # orchestrators (Kubernetes, ECS) decide if a container is healthy.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

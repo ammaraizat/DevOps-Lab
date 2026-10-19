@@ -1,0 +1,170 @@
+# pipeline.yml - our CI/CD pipeline, run by GitHub Actions.
+#
+# Read this top to bottom: it is the full "assembly line" for our app.
+# Every push and pull request triggers it automatically.
+
+name: CI/CD Pipeline
+
+# ----------------------------------------------------------------------
+# WHEN does the pipeline run? These are the "triggers".
+# ----------------------------------------------------------------------
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  # workflow_dispatch adds a manual "Run" button in the GitHub UI.
+  workflow_dispatch:
+
+jobs:
+  # ====================================================================
+  # JOB 1: BUILD + TEST  (Continuous Integration)
+  # Goal: prove the code is correct before we package it.
+  # ====================================================================
+  build-and-test:
+    # "runs-on" picks a fresh, throwaway virtual machine for the job.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: get our code onto the runner.
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # Step 2: install the Python version we want.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: install our dependencies, exactly as pinned.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: THE QUALITY GATE. If any test fails, the job fails here
+      # and nothing below runs, so broken code is never packaged.
+      - name: Run tests
+        run: pytest -v
+
+  # ====================================================================
+  # JOB 2: BUILD THE DOCKER IMAGE  (Packaging)
+  # "needs: build-and-test" means this only runs if tests passed.
+  # ====================================================================
+  docker-build:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # Build the image from our Dockerfile. In a real project the
+      # next step would PUSH this image to a registry (Docker Hub,
+      # GitHub Container Registry) and then deploy it to a server.
+      - name: Build Docker image
+        run: docker build -t devops-lab:${{ github.sha }} .
+
+      # Prove the packaged container actually starts and answers.
+      # This is a tiny "smoke test" of the real artifact we ship.
+      - name: Smoke test the container
+        run: |
+          docker run -d -p 5000:5000 --name lab devops-lab:${{ github.sha }}
+          sleep 5
+          curl --fail http://localhost:5000/health
+          docker rm -f lab
+
+  # ====================================================================
+  # JOB 3: DEPLOY TO AWS  (Continuous Deployment) - REAL
+  #
+  # This job pushes the image to Amazon ECR and rolls it out on ECS
+  # Fargate. It runs ONLY when:
+  #   - we are on the main branch, AND
+  #   - AWS credentials are configured as GitHub secrets.
+  # That `if` guard means the pipeline still works for anyone who
+  # hasn't set up AWS yet (the job is simply skipped).
+  #
+  # Required GitHub repo secrets / variables (see AWS_SETUP.md):
+  #   secrets.AWS_ACCESS_KEY_ID
+  #   secrets.AWS_SECRET_ACCESS_KEY
+  #   vars.AWS_REGION            e.g. us-east-1
+  #   vars.ECR_REPOSITORY        e.g. devops-lab
+  #   vars.ECS_CLUSTER           e.g. devops-lab-cluster
+  #   vars.ECS_SERVICE           e.g. devops-lab-service
+  #   vars.ECS_CONTAINER_NAME    e.g. web  (matches task-definition.json)
+  # ====================================================================
+  deploy-aws:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    # Deploy only from main AND only when an AWS key secret exists.
+    if: github.ref == 'refs/heads/main' && vars.AWS_REGION != ''
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # Step 1: authenticate to AWS using credentials stored as secrets.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Step 2: log the Docker client in to our private ECR registry.
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Step 3: build the image and PUSH it to ECR, tagged with the
+      # git commit SHA (a unique, traceable tag) plus `latest`.
+      - name: Build and push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" .
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          # Expose the exact image reference for the next step.
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      # Step 4: take our task definition template and inject the new
+      # image reference, producing a rendered task definition file.
+      - name: Render new image into the task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: aws/task-definition.json
+          container-name: ${{ vars.ECS_CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      # Step 5: register the new task definition and update the ECS
+      # service. ECS performs a rolling deploy and (because of
+      # wait-for-service-stability) we block until it is healthy.
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ vars.ECS_SERVICE }}
+          cluster: ${{ vars.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+  # ====================================================================
+  # JOB 3 (fallback): SIMULATED DEPLOY
+  # Runs when AWS is NOT configured, so the pipeline always ends with a
+  # clear "deploy" stage even without a cloud account.
+  # ====================================================================
+  deploy-simulated:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && vars.AWS_REGION == ''
+
+    steps:
+      - name: Simulate deployment
+        run: |
+          echo "All gates passed. Tests green, image built and smoke-tested."
+          echo "AWS is not configured, so this is a simulated deploy."
+          echo "To deploy for real, set the AWS secrets/vars from AWS_SETUP.md."
