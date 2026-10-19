@@ -46,7 +46,7 @@ def add_numbers(a, b):
     Pure functions (no side effects) are the easiest things to test,
     which is exactly what makes them good examples for a testing stage.
     """
-    return a + b
+    return a - b
 
 
 # When run directly (python -m app.main), start a development server.
